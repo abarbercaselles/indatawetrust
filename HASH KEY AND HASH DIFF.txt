@@ -1,0 +1,20 @@
+create or replace view VW_CUSTOMER(
+	ID,
+	NAME,
+	LAST_NAME,
+    H_CUSTOMER_HK,
+	H_CUSTOMER_HASH_DIFF,
+
+) as
+
+
+select 
+ID,
+NAME,
+LAST_NAME,
+CAST(SHA2_BINARY(NVL(CAST(ID AS VARCHAR),'null') ) AS BINARY(40)) as H_CUSTOMER_HK,
+CAST(SHA2_BINARY(NVL(CAST(NAME   AS VARCHAR),'null') ||'||'|| NVL(CAST(LAST_NAME    AS VARCHAR),'null') ) AS BINARY(40)) AS H_CUSTOMER_HASH_KEY,
+
+from customer_table
+		   
+ 
