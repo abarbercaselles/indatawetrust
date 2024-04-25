@@ -1,3 +1,4 @@
+-----------------------------------CREATE TABLE 1 and load file 1---------------------------------------------------
 CREATE TABLE customer (
     id INT PRIMARY KEY,
     name VARCHAR(50),
@@ -12,8 +13,7 @@ VALUES
 
 select * from INDATAWETRUST.PUBLIC.CUSTOMER;
 
------------------------------------------------------------------------------
-
+-----------------------------------CREATE TABLE 1 VIEW------------------------------------------
 
 CREATE VIEW customer_view AS
 SELECT
@@ -22,10 +22,12 @@ name,
 lastname,
 CAST(SHA2_BINARY(NVL(CAST(id AS VARCHAR),'null') ) AS BINARY(40)) as hash_key,
 CAST(SHA2_BINARY(NVL(CAST(name  AS VARCHAR),'null') ||'||'|| NVL(CAST(lastname    AS VARCHAR),'null') ) AS BINARY(40)) AS hash_diff
-FROM customerINDATAWETRUST.PUBLICINDATAWETRUST;
+FROM customer;
 
-select * from INDATAWETRUST.PUBLIC.CUSTOMER_VIEW;
------------------------------------------------------------------------------
+select * from customer_view;
+
+-----------------------------CREATE TABLE 2 AND MERGE FROM TABLE 1_VIEW TO TABLE 2---------------------------------------------
+
 CREATE TABLE customer_hashed (
     id INT PRIMARY KEY,
     name VARCHAR(50),
@@ -46,7 +48,8 @@ WHEN NOT MATCHED THEN
     VALUES (source.id, source.name, source.lastname, source.hash_key,source.hash_diff);
 
 select * from INDATAWETRUST.PUBLIC.CUSTOMER_HASHED;
------------------------------------------------------------------------------
+
+--------------------------------TRUNCATE TABLE 1 AND LOAD 2nd file TO TABLE 1------------------------------------------
 
 TRUNCATE TABLE customer;
 INSERT INTO customer (id, name, lastname)
@@ -55,15 +58,17 @@ VALUES
 (4, 'Bruno', 'Mars'),
 (3, 'Will', 'Smith');
 
+--------------------------------MERGE AGAIN FROM TABLE 1_VIEW TO TABLE 2------------------------------------------
+
 MERGE INTO customer_hashed AS target
 USING customer_view AS source 
 ON target.hash_key = source.hash_key
 WHEN MATCHED AND target.hash_diff <> source.hash_diff THEN
     UPDATE SET 
-        name = source.name,
-        lastname = source.lastname
+        target.name = source.name,
+        target.lastname = source.lastname
 WHEN NOT MATCHED THEN
     INSERT (id, name, lastname,hash_key,hash_diff)
     VALUES (source.id, source.name, source.lastname, source.hash_key,source.hash_diff);
 
-select * from INDATAWETRUST.PUBLIC.CUSTOMER_HASHED;
+select * from customer_hashed;
